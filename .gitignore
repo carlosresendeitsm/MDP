@@ -1,0 +1,75 @@
+# ===== Segurança =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
+.aws/
+.anthropic/
+
+# ===== SBOM / Reports (gerados pelo pipeline) =====
+sbom.cdx.json
+sbom.cdx.json.sig
+sbom.cdx.json.pem
+audit.json
+checkov-results.sarif
+scancode.json
+zap-report.html
+zap-report.md
+
+# ===== IaC =====
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terragrunt-cache/
+.pulumi/
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# ===== Node / JS =====
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+.vite/
+coverage/
+.npm/
+.yarn/
+
+# ===== IDE / OS =====
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== Temp =====
+tmp/
+temp/
+*.tmp
+*.bak

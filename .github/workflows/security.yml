@@ -1,0 +1,330 @@
+# =============================================================================
+# .github/workflows/security.yml
+# -----------------------------------------------------------------------------
+# Security Gate padrão — Template C1–C4
+# Owner: Carlos Resende — Head of IT
+# Versão: v1.0 — 24/04/2026
+# Referência: validacao_codigos_seguranca.md v1.0
+# =============================================================================
+#
+# Pipeline bloqueante integrando:
+#   - Secret Scanning (Gitleaks + GitHub Advanced Security)
+#   - SAST (CodeQL com query packs security-and-quality + security-extended)
+#   - Code Scanning Autofix (revisão humana exigida)
+#   - Dependency Scan (OSV-Scanner + Dependabot)
+#   - IaC Scan (Checkov — Terraform/CloudFormation/Kubernetes)
+#   - License Scan (scancode-toolkit)
+#   - SBOM (Syft / CycloneDX)
+#   - Artifact Signing (cosign / Sigstore keyless)
+#   - DAST (OWASP ZAP baseline) — nightly em staging
+#   - Claude Code Audit (prompt C1–C4) — comentário no PR
+#
+# Critério de aprovação: todos os jobs obrigatórios em verde + veredito Claude
+# ≠ BLOCKED. Qualquer HIGH/CRITICAL aberto = merge bloqueado.
+# =============================================================================
+
+name: Security Gate (C1-C4)
+
+on:
+  push:
+    branches: [main, develop, 'release/**']
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Varredura noturna completa — 03:00 UTC (00:00 BRT)
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write       # obrigatório para upload SARIF
+  actions: read
+  pull-requests: write         # para comentar audit no PR
+  id-token: write              # keyless signing via cosign + Sigstore
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SEVERITY_THRESHOLD: HIGH     # findings >= HIGH bloqueiam o merge
+  ASVS_LEVEL: 2                # padrão; elevar para 3 em repos críticos
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # C2 — Secret Scanning (Gitleaks)
+  # ---------------------------------------------------------------------------
+  secret-scan:
+    name: C2 · Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITLEAKS_ENABLE_SUMMARY: true
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # ---------------------------------------------------------------------------
+  # C2 — SAST (GitHub CodeQL)
+  # ---------------------------------------------------------------------------
+  codeql:
+    name: C2 · SAST (CodeQL)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript, java-kotlin, go, csharp]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Init CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality,security-extended
+          config: |
+            paths-ignore:
+              - 'vendor/**'
+              - 'node_modules/**'
+              - 'dist/**'
+              - 'build/**'
+              - 'third_party/**'
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: always
+
+  # ---------------------------------------------------------------------------
+  # C2 — Dependency Scan (OSV-Scanner)
+  # ---------------------------------------------------------------------------
+  dependency-scan:
+    name: C2 · Dependency Scan (OSV)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: OSV-Scanner
+        uses: google/osv-scanner-action/osv-scanner-action@v1
+        with:
+          scan-args: |-
+            --recursive
+            --skip-git
+            ./
+        continue-on-error: false
+
+  # ---------------------------------------------------------------------------
+  # C3 — IaC Scan (Checkov — Terraform, CloudFormation, K8s, Helm, Docker)
+  # ---------------------------------------------------------------------------
+  iac-scan:
+    name: C3 · IaC Scan (Checkov)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform,cloudformation,kubernetes,helm,dockerfile,github_actions
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+          soft_fail: false
+          skip_check: CKV_SECRET_* # tratado pelo Gitleaks
+          download_external_modules: true
+
+      - name: Upload Checkov SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-results.sarif
+          category: checkov
+
+  # ---------------------------------------------------------------------------
+  # C2 — License Scan (ScanCode Toolkit)
+  # ---------------------------------------------------------------------------
+  license-scan:
+    name: C2 · License Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ScanCode
+        run: |
+          pip install --break-system-packages scancode-toolkit
+          scancode --license --json-pp scancode.json . || true
+          # Bloqueia licenças copyleft fortes não aprovadas
+          python -c "
+          import json, sys
+          blocked = {'AGPL-3.0', 'SSPL-1.0', 'Commons-Clause'}
+          data = json.load(open('scancode.json'))
+          hits = [f for f in data.get('files', [])
+                  for l in f.get('license_detections', [])
+                  if any(b in l.get('license_expression','') for b in blocked)]
+          if hits:
+              print('BLOCKED: copyleft license detected'); sys.exit(1)
+          "
+
+  # ---------------------------------------------------------------------------
+  # C2/C3 — SBOM (Syft — CycloneDX)
+  # ---------------------------------------------------------------------------
+  sbom:
+    name: C2 · SBOM (Syft)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cdx.json
+          retention-days: 90
+
+  # ---------------------------------------------------------------------------
+  # C4 — Artifact Signing (cosign keyless via Sigstore)
+  # ---------------------------------------------------------------------------
+  sign:
+    name: C4 · Artifact Signing (cosign)
+    runs-on: ubuntu-latest
+    needs: [sbom]
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sbom
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Keyless Sign
+        run: |
+          cosign sign-blob --yes \
+            --output-signature sbom.cdx.json.sig \
+            --output-certificate sbom.cdx.json.pem \
+            sbom.cdx.json
+
+      - name: Upload signatures
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-signatures
+          path: |
+            sbom.cdx.json.sig
+            sbom.cdx.json.pem
+
+  # ---------------------------------------------------------------------------
+  # C4 — DAST (OWASP ZAP Baseline) — apenas em staging, schedule ou manual
+  # ---------------------------------------------------------------------------
+  zap-dast:
+    name: C4 · DAST (OWASP ZAP)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ZAP Baseline
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ vars.STAGING_URL }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j -T 5'
+          fail_action: true
+          allow_issue_writing: true
+
+  # ---------------------------------------------------------------------------
+  # C1+C2+C3+C4 — Claude Code Audit (prompt C1–C4)
+  # ---------------------------------------------------------------------------
+  claude-audit:
+    name: C1-C4 · Claude Code Security Audit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: [secret-scan, codeql, dependency-scan, iac-scan]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code audit
+        id: audit
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt_file: .claude/CLAUDE.md
+          command: audit:pr ${{ github.event.pull_request.number }}
+          output_format: json
+          output_file: audit.json
+
+      - name: Parse verdict & comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const audit = JSON.parse(fs.readFileSync('audit.json','utf8'));
+            const emoji = { APPROVED:'✅', APPROVED_WITH_CAVEATS:'⚠️', BLOCKED:'❌' };
+            const body = [
+              `## ${emoji[audit.verdict]||'❔'} Claude Security Audit — ${audit.verdict}`,
+              '',
+              `**Counts:** 🔴 ${audit.counts.critical} · 🟠 ${audit.counts.high} · 🟡 ${audit.counts.medium} · 🔵 ${audit.counts.low}`,
+              '',
+              '<details><summary>Findings (JSON)</summary>',
+              '',
+              '```json',
+              JSON.stringify(audit.findings, null, 2),
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+            if (audit.verdict === 'BLOCKED') {
+              core.setFailed('Security audit verdict = BLOCKED');
+            }
+
+  # ---------------------------------------------------------------------------
+  # Gate final — falha se qualquer job obrigatório falhou
+  # ---------------------------------------------------------------------------
+  security-gate:
+    name: Security Gate · Final Verdict
+    runs-on: ubuntu-latest
+    needs:
+      - secret-scan
+      - codeql
+      - dependency-scan
+      - iac-scan
+      - license-scan
+      - sbom
+    if: always()
+    steps:
+      - name: Fail on upstream errors
+        run: |
+          status="${{ join(needs.*.result, ',') }}"
+          echo "Jobs: $status"
+          if echo "$status" | grep -qE "failure|cancelled"; then
+            echo "::error::Security Gate failed — merge blocked"
+            exit 1
+          fi
+          echo "Security Gate = GREEN"

@@ -1,0 +1,40 @@
+name: "📘 Documentação"
+description: "Relatar erro, omissão ou melhoria em docs, README, templates ou CLAUDE.md."
+title: "[DOC] "
+labels: ["documentation", "triage"]
+body:
+  - type: dropdown
+    id: target
+    attributes:
+      label: "Arquivo-alvo"
+      options:
+        - "README.md"
+        - "CLAUDE.md"
+        - "CONTRIBUTING.md"
+        - "SECURITY.md"
+        - "CHANGELOG.md"
+        - "docs/validacao_codigos_seguranca.md"
+        - "docs/validacao_codigos_seguranca_MDP.md"
+        - "docs/prompt_auditoria_claude_code.md"
+        - "docs/architecture.md"
+        - "docs/example_audit_output.md"
+        - ".github/PULL_REQUEST_TEMPLATE.md"
+        - "Outro"
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: "Descreva o problema / lacuna"
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: "Sugestão de melhoria"
+  - type: checkboxes
+    id: offer
+    attributes:
+      label: "Disposição"
+      options:
+        - label: "Posso submeter PR corrigindo esta documentação."

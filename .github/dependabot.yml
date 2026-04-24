@@ -1,0 +1,102 @@
+# ==================================================================
+# Dependabot — MDP Security Gate Kit
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# ==================================================================
+version: 2
+
+updates:
+  # --- GitHub Actions (pipeline de segurança) --------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "07:00"
+      timezone: "America/Sao_Paulo"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "security-layer-C4"
+    reviewers:
+      - "carlosresendeitsm"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # --- npm (caso haja componentes JS/TS no MDP) ------------------
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "America/Sao_Paulo"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "security-layer-C2"
+    reviewers:
+      - "carlosresendeitsm"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    open-pull-requests-limit: 10
+    groups:
+      npm-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Atualizações majors exigem validação manual do pipeline
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # --- pip (workers Python, scripts de auditoria) ----------------
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "America/Sao_Paulo"
+    labels:
+      - "dependencies"
+      - "python"
+      - "security-layer-C2"
+    reviewers:
+      - "carlosresendeitsm"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    open-pull-requests-limit: 10
+    groups:
+      pip-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # --- Docker (se houver Containerfile/Dockerfile no futuro) -----
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "America/Sao_Paulo"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "security-layer-C3"
+    reviewers:
+      - "carlosresendeitsm"
+    commit-message:
+      prefix: "chore(docker)"
+    open-pull-requests-limit: 5

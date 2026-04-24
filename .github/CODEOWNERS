@@ -1,0 +1,34 @@
+# ==================================================================
+# CODEOWNERS — MDP Security Gate Kit
+# ==================================================================
+# Cada linha associa um padrão de arquivo a um ou mais revisores
+# obrigatórios. A última regra que casa vence (padrão GitHub).
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# ==================================================================
+
+# ----- Default owner (tudo que não tem regra mais específica) -----
+*                                   @carlosresendeitsm
+
+# ----- Governança e frameworks C1 (conformidade, LGPD, políticas) -
+CLAUDE.md                           @carlosresendeitsm
+CODEOWNERS                          @carlosresendeitsm
+SECURITY.md                         @carlosresendeitsm
+LICENSE                             @carlosresendeitsm
+docs/validacao_codigos_seguranca.md        @carlosresendeitsm
+docs/validacao_codigos_seguranca_MDP.md    @carlosresendeitsm
+
+# ----- Pipeline de segurança (C4) ---------------------------------
+.github/workflows/**                @carlosresendeitsm
+.github/dependabot.yml              @carlosresendeitsm
+
+# ----- Tratamento de dado sensível de menor (Art. 14 LGPD, MDP) ---
+# Qualquer alteração em código/config que toque dado classificado
+# L4 exige revisão adicional do co-titular e do DPO designado.
+# Substitua os placeholders quando o DPO e a co-titular forem
+# cadastrados no GitHub.
+#
+# docs/validacao_codigos_seguranca_MDP.md   @carlosresendeitsm @michelle-handle @dpo-handle
+# src/mdp/minor/**                          @carlosresendeitsm @michelle-handle @dpo-handle
+# src/mdp/privacy/**                        @carlosresendeitsm @michelle-handle @dpo-handle
+docs/validacao_codigos_seguranca_MDP.md    @carlosresendeitsm

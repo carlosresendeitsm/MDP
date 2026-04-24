@@ -1,0 +1,74 @@
+name: "🐛 Bug report"
+description: "Relatar um defeito reproduzível no kit (pipeline, prompt, template, doc)."
+title: "[BUG] "
+labels: ["bug", "triage"]
+assignees:
+  - carlosresendeitsm
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **Se o bug tiver implicação de segurança, NÃO prossiga aqui.** Use o canal
+        privado descrito em `SECURITY.md`.
+  - type: checkboxes
+    id: pre-checks
+    attributes:
+      label: "Pré-checagens"
+      options:
+        - label: "Confirmei que não é um bug de segurança."
+          required: true
+        - label: "Pesquisei issues existentes e não encontrei duplicata."
+          required: true
+        - label: "Estou usando a versão mais recente do kit."
+          required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: "Componente afetado"
+      options:
+        - "Pipeline (.github/workflows/security.yml)"
+        - "Prompt do auditor (CLAUDE.md / prompt_auditoria_claude_code.md)"
+        - "Template de PR"
+        - "Template base (validacao_codigos_seguranca.md)"
+        - "Overlay MDP (validacao_codigos_seguranca_MDP.md)"
+        - "Dependabot / CODEOWNERS"
+        - "Documentação"
+        - "Outro"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: "Descrição do bug"
+      description: "O que aconteceu? O que era esperado?"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: "Passos para reproduzir"
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: "Ambiente"
+      placeholder: |
+        - SO: macOS 14.x / Ubuntu 24.04 / Windows 11 / GitHub Actions runner
+        - Versões: gh, git, python, node
+        - Runner: ubuntu-latest / self-hosted
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Logs / saída relevante"
+      render: shell
+  - type: textarea
+    id: extra
+    attributes:
+      label: "Contexto adicional"

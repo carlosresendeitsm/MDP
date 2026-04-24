@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "🔒 Vulnerabilidade de segurança (privado)"
+    url: https://github.com/carlosresendeitsm/MDP/security/advisories/new
+    about: "NÃO abra issue pública para falhas de segurança. Use Private Vulnerability Reporting. Veja SECURITY.md."
+  - name: "📜 Solicitação de titular (LGPD)"
+    url: https://safbfr.com.br/lgpd
+    about: "Direitos do titular (acesso, correção, anonimização, portabilidade, eliminação) via canal oficial do Controlador."
+  - name: "💬 Discussão aberta"
+    url: https://github.com/carlosresendeitsm/MDP/discussions
+    about: "Dúvidas, ideias ou debates sobre o kit de segurança."

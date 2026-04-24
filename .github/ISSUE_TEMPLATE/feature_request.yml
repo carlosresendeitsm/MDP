@@ -1,0 +1,56 @@
+name: "✨ Feature request"
+description: "Sugerir melhoria, novo controle ou cobertura adicional de framework."
+title: "[FEAT] "
+labels: ["enhancement", "triage"]
+assignees:
+  - carlosresendeitsm
+body:
+  - type: checkboxes
+    id: pre-checks
+    attributes:
+      label: "Pré-checagens"
+      options:
+        - label: "Pesquisei issues existentes e não encontrei sugestão equivalente."
+          required: true
+        - label: "Confirmo que esta sugestão não envolve exploração ativa de vulnerabilidade."
+          required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: "Camada alvo"
+      options:
+        - "C1 — Governança & Conformidade (LGPD, ISO, ITIL)"
+        - "C2 — Desenvolvimento Seguro (OWASP Top 10, ASVS)"
+        - "C3 — IA / Dados / Cloud (OWASP LLM Top 10, AWS SMM/CAF)"
+        - "C4 — Verificação Dinâmica (DAST, SBOM, signing)"
+        - "Transversal (vários)"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Qual problema você quer resolver?"
+      placeholder: "Hoje o pipeline não cobre X, o que expõe a equipe a Y."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposta de solução"
+      description: "Seja concreto: adicionar job W, campo Z no template, etc."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternativas consideradas"
+  - type: textarea
+    id: framework-refs
+    attributes:
+      label: "Referências a frameworks"
+      placeholder: "OWASP ASVS V2.1.7, ISO 27001 A.8.28, LGPD Art. 6 VII, ..."
+  - type: textarea
+    id: impact
+    attributes:
+      label: "Impacto esperado"
+      placeholder: "Reduz falso-negativo em X%, eleva maturidade de AWS SMM de Phase 3 para 4, etc."
