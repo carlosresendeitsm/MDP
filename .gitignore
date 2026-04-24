@@ -73,3 +73,7 @@ tmp/
 temp/
 *.tmp
 *.bak
+
+# local test artifacts
+main
+package.json
