@@ -193,7 +193,7 @@ jobs:
           output-file: sbom.cdx.json
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: sbom.cdx.json
@@ -225,7 +225,7 @@ jobs:
             sbom.cdx.json
 
       - name: Upload signatures
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-signatures
           path: |
