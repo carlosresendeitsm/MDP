@@ -75,7 +75,8 @@ jobs:
   # C2 — SAST (GitHub CodeQL)
   # ---------------------------------------------------------------------------
   codeql:
-    name: C2 · SAST (CodeQL)
+    name: "C2 · SAST (CodeQL)"
+    if: false  # coberto pelo codeql.yml (CodeQL Advanced nativo)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
