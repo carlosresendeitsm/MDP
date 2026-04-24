@@ -112,6 +112,7 @@ jobs:
   # ---------------------------------------------------------------------------
   dependency-scan:
     name: C2 · Dependency Scan (OSV)
+    if: false  # TODO: ativar quando houver lockfile (package-lock.json, poetry.lock, go.sum)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -130,6 +131,7 @@ jobs:
   # ---------------------------------------------------------------------------
   iac-scan:
     name: C3 · IaC Scan (Checkov)
+    if: false  # TODO: ativar quando houver IaC (terraform/k8s/dockerfile)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -239,7 +241,7 @@ jobs:
   zap-dast:
     name: C4 · DAST (OWASP ZAP)
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && vars.STAGING_URL != ''
     steps:
       - uses: actions/checkout@v4
 
