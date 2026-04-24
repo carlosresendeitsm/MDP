@@ -59,7 +59,7 @@ jobs:
     name: C2 · Secret Scan (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -82,7 +82,7 @@ jobs:
       matrix:
         language: [python, javascript-typescript, java-kotlin, go, csharp]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Init CodeQL
         uses: github/codeql-action/init@v3
@@ -113,7 +113,7 @@ jobs:
     name: C2 · Dependency Scan (OSV)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: OSV-Scanner
         uses: google/osv-scanner-action/osv-scanner-action@v1
@@ -131,7 +131,7 @@ jobs:
     name: C3 · IaC Scan (Checkov)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Checkov
         id: checkov
@@ -159,7 +159,7 @@ jobs:
     name: C2 · License Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: ScanCode
         run: |
@@ -184,7 +184,7 @@ jobs:
     name: C2 · SBOM (Syft)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
@@ -208,7 +208,7 @@ jobs:
     needs: [sbom]
     if: github.event_name != 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/download-artifact@v4
         with:
@@ -240,7 +240,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: ZAP Baseline
         uses: zaproxy/action-baseline@v0.12.0
@@ -260,7 +260,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: [secret-scan, codeql, dependency-scan, iac-scan]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
